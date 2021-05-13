@@ -1,0 +1,9 @@
+version: "3"
+
+services: 
+  ros: 
+    build: .
+    volumes: 
+      - code
+    ports: 
+      - 5900:5900

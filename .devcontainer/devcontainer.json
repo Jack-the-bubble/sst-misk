@@ -16,6 +16,7 @@
     "--runtime=nvidia",
     "--name=sst-misk-workspace",
     "--privileged",
+    "--env=DISPLAY",
   ],
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",

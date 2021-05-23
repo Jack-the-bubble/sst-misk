@@ -15,7 +15,7 @@
 2. In first terminal run `roscore`
 3. In second terminal run simulation 
     with defined world and robot specified in *.world file
-    (`rosrun stage_ros stageros /workspace/sst-misk-workspace/ros_ws/src/roomba_stage/roomba_lse_arena.world`)
+    (`rosrun stage_ros stageros /workspaces/sst-misk/ros_ws/src/roomba_stage/roomba_lse_arena.world`)
 4. run navigation system in third terminal (`rosrun basic_controller controller`)
 5. In fourth terminal call service to order robot to move to specified position on the map.
     (`rosservice call /go_to_pose "pose:

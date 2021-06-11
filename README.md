@@ -8,14 +8,14 @@
 4. export built packages (`source devel/setup.bash`)
 
 # Run simulation
-
+0. add display `xhost +`
 1. make sure you have 4 terminals open 
    and all of them have previously built packages exported 
    (see point 4. in previous step).
 2. In first terminal run `roscore`
 3. In second terminal run simulation 
     with defined world and robot specified in *.world file
-    (`rosrun stage_ros stageros /workspace/sst-misk-workspace/ros_ws/src/roomba_stage/roomba_lse_arena.world`)
+    (`rosrun stage_ros stageros /workspaces/sst-misk/ros_ws/src/roomba_stage/roomba_lse_arena.world`)
 4. run navigation system in third terminal (`rosrun basic_controller controller`)
 5. In fourth terminal call service to order robot to move to specified position on the map.
     (`rosservice call /go_to_pose "pose:
@@ -29,6 +29,7 @@
             z: 0.0
             w: 0.0"
     `)
+6. Run navigation from start `cd /workspaces/sst-misk/ros_ws/src/pr_vis_graph/src/ && python3 prm_path_navigation.py`
 
 # discover robots
 

@@ -1,20 +1,23 @@
 import random
 import math
 import numpy as np
-# import matplotlib
-# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from scipy.spatial import cKDTree
 import cv2
 
 # parameter
-N_SAMPLE = 1200  # number of sample_points
+N_SAMPLE = 1600  # number of sample_points
 N_KNN = 10  # number of edge from one sampled point
-MAX_EDGE_LEN = 50.0  # [m] Maximum edge length
-MIN_EDGE_LEN = 5.0
-DISTANCE_TO_OBSTACLE = 5.0
+MAX_EDGE_LEN = 150.0  # [m] Maximum edge length
+MIN_EDGE_LEN = 20.0
+DISTANCE_TO_OBSTACLE = 50.0
 
-show_animation = True
+# max y = 5
+# min y = -5
+# max x =  7
+# min x = -7
+
+show_animation = False
 plot_graph = not(show_animation)
 
 
@@ -38,16 +41,16 @@ class PRVG:
     """
     Class for probability visibility diagram
     """
+
     def __init__(self) -> None:
         self.graph = []
         self.map_obs_x = []
         self.map_obs_y = []
         self.map_obs = tuple()
 
-
     # def generate
 
-    def imageToArray(self,img_path = '../maps/test_map_round.png'):
+    def imageToArray(self, img_path='../maps/map.png'):
         image = cv2.imread(img_path)
         ox = []
         oy = []
@@ -69,43 +72,43 @@ class PRVG:
         self.max_edge_len = max_edge_len
         self.min_edge_len = min_edge_len
 
-
-    def loadImage(self,img_path = '../maps/test_map_round.png'):
+    def loadImage(self, img_path='../maps/map.png'):
         self.map_obs_x, self.map_obs_y = self.imageToArray(img_path)
-        self.map_obs = zip(self.map_obs_x,self.map_obs_y)
-    
+        self.map_obs = zip(self.map_obs_x, self.map_obs_y)
+
     def generateGraph(self) -> None:
         try:
             assert self.map_obs_x, 'Map not loaded'
         except:
             self.loadImage()
-        obstacle_kd_tree = cKDTree(np.vstack((self.map_obs_x, self.map_obs_y)).T)
+        obstacle_kd_tree = cKDTree(
+            np.vstack((self.map_obs_x, self.map_obs_y)).T)
 
         sample_x, sample_y = self.generatePoints(obstacle_kd_tree)
         if show_animation:
             plt.plot(sample_x, sample_y, ".b")
 
-        self.graph = self.generate_road_map(sample_x, sample_y,  obstacle_kd_tree)
+        self.graph = self.generate_road_map(
+            sample_x, sample_y,  obstacle_kd_tree)
 
-
-    def prm_planning(self,sx, sy, gx, gy, ox, oy):
+    def prm_planning(self, sx, sy, gx, gy, ox, oy):
 
         obstacle_kd_tree = cKDTree(np.vstack((ox, oy)).T)
 
         sample_x, sample_y = self.sample_points(sx, sy, gx, gy,
-                                         ox, oy, obstacle_kd_tree)
+                                                ox, oy, obstacle_kd_tree)
         if show_animation:
             plt.plot(sample_x, sample_y, ".b")
 
-        road_map = self.generate_road_map(sample_x, sample_y,  obstacle_kd_tree)
+        road_map = self.generate_road_map(
+            sample_x, sample_y,  obstacle_kd_tree)
 
         rx, ry = self.dijkstra_planning(
             sx, sy, gx, gy, road_map, sample_x, sample_y)
 
         return rx, ry
 
-
-    def  is_collision(self,sx, sy, gx, gy,  obstacle_kd_tree):
+    def is_collision(self, sx, sy, gx, gy,  obstacle_kd_tree):
         x = sx
         y = sy
         dx = gx - sx
@@ -133,8 +136,7 @@ class PRVG:
 
         return False  # OK
 
-
-    def generate_road_map(self,sample_x, sample_y, obstacle_kd_tree):
+    def generate_road_map(self, sample_x, sample_y, obstacle_kd_tree):
         """
         Road map generation
         sample_x: [m] x positions of sampled points
@@ -169,8 +171,7 @@ class PRVG:
 
         return road_map
 
-
-    def dijkstra_planning(self,sx, sy, gx, gy, road_map, sample_x, sample_y):
+    def dijkstra_planning(self, sx, sy, gx, gy, road_map, sample_x, sample_y):
         """
         s_x: start x position [m]
         s_y: start y position [m]
@@ -254,19 +255,18 @@ class PRVG:
 
         return rx, ry
 
-
-    def plot_road_map(self,road_map, sample_x, sample_y):  # pragma: no cover
+    def plot_road_map(self, road_map, sample_x, sample_y):  # pragma: no cover
 
         for i, _ in enumerate(road_map):
             for ii in range(len(road_map[i])):
                 ind = road_map[i][ii]
 
                 plt.plot([sample_x[i], sample_x[ind]],
-                        [sample_y[i], sample_y[ind]], "-k")
+                         [sample_y[i], sample_y[ind]], "-k")
         plt.show()
 
-    def generatePoints(self,obstacle_kd_tree):
-        max_x = max(self.map_obs_x) 
+    def generatePoints(self, obstacle_kd_tree):
+        max_x = max(self.map_obs_x)
         max_y = max(self.map_obs_y)
         min_x = min(self.map_obs_x)
         min_y = min(self.map_obs_y)
@@ -283,7 +283,7 @@ class PRVG:
                 sample_x.append(tx)
                 sample_y.append(ty)
 
-        #this need to be changed to hmmm sth not based on one start/target
+        # this need to be changed to hmmm sth not based on one start/target
         # sample_x.append(sx)
         # sample_y.append(sy)
         # sample_x.append(gx)
@@ -309,7 +309,7 @@ class PRVG:
                 sample_x.append(tx)
                 sample_y.append(ty)
 
-        #this need to be changed to hmmm sth not based on one start/target
+        # this need to be changed to hmmm sth not based on one start/target
         # sample_x.append(sx)
         # sample_y.append(sy)
         # sample_x.append(gx)
@@ -322,10 +322,10 @@ def main():
     print(__file__ + " start!!")
 
     # start and goal position
-    sx = 100.0  # [m]
-    sy = 200.0  # [m]
-    gx = 1250.0  # [m]
-    gy = 550.0  # [m]
+    sx = 1100.0  # [m]
+    sy = 800.0  # [m]
+    gx = 1400.0  # [m]
+    gy = 200.0  # [m]
     robot_size = DISTANCE_TO_OBSTACLE  # [m]
 
     ox = []
@@ -342,7 +342,7 @@ def main():
         plt.axis("equal")
 
     rx, ry = prvg.prm_planning(sx, sy, gx, gy, ox, oy, DISTANCE_TO_OBSTACLE)
-    print(rx,ry)
+    print(rx, ry)
 
     assert rx, 'Cannot found path'
 
@@ -351,12 +351,15 @@ def main():
         plt.pause(0.001)
         plt.show()
 
+
 def test():
     prvg = PRVG()
-    prvg.setup(DISTANCE_TO_OBSTACLE,N_SAMPLE,N_KNN,MAX_EDGE_LEN,MIN_EDGE_LEN)
+    prvg.setup(DISTANCE_TO_OBSTACLE, N_SAMPLE,
+               N_KNN, MAX_EDGE_LEN, MIN_EDGE_LEN)
     prvg.generateGraph()
 
+
 if __name__ == '__main__':
-    #test case
+    # test case
     # main()
     test()

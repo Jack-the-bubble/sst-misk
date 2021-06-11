@@ -8,7 +8,7 @@
 4. export built packages (`source devel/setup.bash`)
 
 # Run simulation
-
+0. add display `xhost +`
 1. make sure you have 4 terminals open 
    and all of them have previously built packages exported 
    (see point 4. in previous step).
@@ -29,6 +29,7 @@
             z: 0.0
             w: 0.0"
     `)
+6. Run navigation from start `cd /workspaces/sst-misk/ros_ws/src/pr_vis_graph/src/ && python3 prm_path_navigation.py`
 
 # discover robots
 

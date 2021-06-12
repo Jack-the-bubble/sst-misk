@@ -45,9 +45,9 @@ class Node:
 def sendTargetService(x, y, robot):
     # global target_num
     print("sending goal num: ", robot.target_num)
-    rospy.wait_for_service('go_to_pose')
+    rospy.wait_for_service(robot.service_name)
     try:
-        sendTarget = rospy.ServiceProxy('go_to_pose', SetGoal)
+        sendTarget = rospy.ServiceProxy(robot.service_name, SetGoal)
         msg = Pose()
         print("goal px pose x: y: ",x[robot.target_num],y[robot.target_num] )
         x_scaled, y_scaled = scaleGoal(x[robot.target_num],y[robot.target_num])
@@ -301,7 +301,10 @@ def main():
     print(__file__ + " start!!")
 
     robot_0 = RobotObject('robot_0')
+    robot_1 = RobotObject('robot_1')
 
+
+    robot_list = [robot_0, robot_1]
     # start and goal position
     # position = robot_0.current_odom.pose.pose.position
     # sx, sy = scaleToMap(position.x, position.y)
@@ -337,47 +340,47 @@ def main():
 
     while not rospy.is_shutdown():
         # wait for robot 0 to get new position
-        if any([robot_0.goalDriving]):
+        if any([robot_0.goalDriving, robot_1.goalDriving]):
+            for robot in robot_list:
+                if robot.new_goal:
+                    position = robot.current_odom.pose.pose.position
+                    sx, sy = scaleToMap(position.x, position.y)
+                    gx, gy = scaleToMap(robot.new_point.x, robot.new_point.y)
+                    robot_size = 100.0  # [px]
 
-            if robot_0.new_goal:
-                position = robot_0.current_odom.pose.pose.position
-                sx, sy = scaleToMap(position.x, position.y)
-                gx, gy = scaleToMap(robot_0.new_point.x, robot_0.new_point.y)
-                robot_size = 100.0  # [px]
 
 
+                    if show_animation:
+                        plt.plot(ox, oy, ".k")
+                        plt.plot(sx, sy, "^r")
+                        plt.plot(gx, gy, "^c")
+                        plt.grid(True)
+                        plt.axis("equal")
 
-                if show_animation:
-                    plt.plot(ox, oy, ".k")
-                    plt.plot(sx, sy, "^r")
-                    plt.plot(gx, gy, "^c")
-                    plt.grid(True)
-                    plt.axis("equal")
+                    robot.rx, robot.ry = prm_planning(sx, sy, gx, gy,
+                                                        ox, oy, robot_size)
 
-                robot_0.rx, robot_0.ry = prm_planning(sx, sy, gx, gy,
-                                                      ox, oy, robot_size)
+                    if not robot.rx:
+                        print('COULD NOT FIND PATH')
+                        robot.new_goal = False
+                        robot.goalDriving = False
+                        continue
+                    # assert rx, 'Cannot found path'
 
-                if not robot_0.rx:
-                    print('COULD NOT FIND PATH')
-                    robot_0.new_goal = False
-                    robot_0.goalDriving = False
-                    continue
-                # assert rx, 'Cannot found path'
+                    if show_animation:
+                        plt.plot(robot.rx, robot.ry, "-r")
+                        plt.pause(0.00005)
+                        plt.show()
 
-                if show_animation:
-                    plt.plot(robot_0.rx, robot_0.ry, "-r")
-                    plt.pause(0.00005)
-                    plt.show()
+                    print("path x, y", robot.rx.reverse(), robot.ry.reverse())
+                    robot.new_goal = False
 
-                print("path x, y", robot_0.rx.reverse(), robot_0.ry.reverse())
-                robot_0.new_goal = False
-
-            # goalDriving = True
-            if(robot_0.goalDriving):
-                robot_0.goalDriving = sendTargetService(robot_0.rx, 
-                                                        robot_0.ry, robot_0)
-                if not robot_0.goalDriving:
-                    print("DESTINATION REACHED")
+                # goalDriving = True
+                if(robot.goalDriving):
+                    robot.goalDriving = sendTargetService(robot.rx, 
+                                                            robot.ry, robot)
+                    if not robot.goalDriving:
+                        print("DESTINATION REACHED")
 
 
 if __name__ == '__main__':

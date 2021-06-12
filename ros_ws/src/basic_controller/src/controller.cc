@@ -156,23 +156,36 @@ private:
     }
 
 public:
-    SimpleController()
+    SimpleController(const char* robot_name)
     {
+
+        char topic[20];
+        char cmd_topic[20];
+        char service[20];
+        sprintf(topic, "%s/odom", robot_name);
+        sprintf(service, "%s/go_to_pose", robot_name);
+        sprintf(cmd_topic, "%s/cmd_vel", robot_name);
+
         n_ = ros::NodeHandle();
-        server_ = n_.advertiseService("go_to_pose",
+        server_ = n_.advertiseService(service,
                                       &SimpleController::srv_callback, this);
-        sub_ = n_.subscribe("robot_0/odom", 1,
+        sub_ = n_.subscribe(topic, 1,
                             &SimpleController::odomCallback, this);
 
-        cmd_pub_ = n_.advertise<geometry_msgs::Twist>("robot_0/cmd_vel", 1);
+        cmd_pub_ = n_.advertise<geometry_msgs::Twist>(cmd_topic, 1);
     }
 };
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "robot_controller");
-    //   ros::NodeHandle n;
-    SimpleController controller;
+    if (argc < 2) {
+        std::cout<<"provide robot name as an argument"<<std::endl;
+        return -1;
+    }
+    char node_name[20];
+    sprintf(node_name, "%s_controller", argv[1]);
+    ros::init(argc, argv, node_name);
+    SimpleController controller(argv[1]);
 
     //   ros::ServiceServer service = n.advertiseService("add_two_ints", add);
     //   ROS_INFO("Ready to add two ints.");

@@ -15,6 +15,7 @@ class RobotObject:
         self.target_num = 0
         self.rx = []  # to store path x coordinates
         self.ry = []  # to store path y coordinates
+        self.service_name = topic_prefix + '/go_to_pose'
         self.new_point = Point()
         rospy.wait_for_message(topic_prefix+'/odom', Odometry)
 

@@ -22,7 +22,7 @@ from geometry_msgs.msg import Pose
 from sst_interfaces.srv import *
 
 show_animation = True
-target_num = 0
+# target_num = 0
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -42,23 +42,23 @@ class Node:
         return str(self.x) + "," + str(self.y) + "," +\
                str(self.cost) + "," + str(self.parent_index)
 
-def sendTargetService(x, y):
-    global target_num
-    print("sending goal num: ", target_num)
+def sendTargetService(x, y, robot):
+    # global target_num
+    print("sending goal num: ", robot.target_num)
     rospy.wait_for_service('go_to_pose')
     try:
         sendTarget = rospy.ServiceProxy('go_to_pose', SetGoal)
         msg = Pose()
-        print("goal px pose x: y: ",x[target_num],y[target_num] )
-        x_scaled, y_scaled = scaleGoal(x[target_num],y[target_num])
+        print("goal px pose x: y: ",x[robot.target_num],y[robot.target_num] )
+        x_scaled, y_scaled = scaleGoal(x[robot.target_num],y[robot.target_num])
         print("goal x, y", x_scaled, y_scaled)
         msg.position.x = x_scaled
         msg.position.y = y_scaled
 
-        target_num = target_num +1
+        robot.target_num = robot.target_num + 1
         resp = sendTarget(msg)
         print(resp)
-        if(target_num == len(x)):
+        if(robot.target_num == len(x)):
             return 0
         return resp
     except rospy.ServiceException as e:
@@ -269,7 +269,6 @@ def sample_points(sx, sy, gx, gy, rr, ox, oy, obstacle_kd_tree):
     return sample_x, sample_y
 
 def imageToArray(img_path = os.path.join(BASE_DIR, 'src/map.png')):
-    print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     image = cv2.imread(img_path)
     ox = []
     oy = []
@@ -288,9 +287,9 @@ def scaleGoal(px,py):
     return x,y
 
 def scaleToMap(x, y):
-    '''scale coordinates from ros to coordinates in map
+    '''scale coordinates from ros to coordinates in map image from bottom left
 
-    :return (x, y) - a pair of coordinates in map frame from this script
+    :return (x, y) - a pair of coordinates in pixels
     '''
     ret_x = 100*x+800
     ret_y = 100*y+600
@@ -301,44 +300,85 @@ def main():
     rospy.init_node('pr_vis_node')
     print(__file__ + " start!!")
 
-    robot_1 = RobotObject('robot_0')
+    robot_0 = RobotObject('robot_0')
 
     # start and goal position
-    # sx = 1100.0  # [px]
-    # sy = 800.0  # [px]
-    position = robot_1.current_odom.pose.pose.position
-    sx, sy = scaleToMap(position.x, position.y)
-    gx = 1200.0  # [px]
-    gy = 200.0  # [px]
-    robot_size = 100.0  # [px]
+    # position = robot_0.current_odom.pose.pose.position
+    # sx, sy = scaleToMap(position.x, position.y)
+    # gx = 1200.0  # [px]
+    # gy = 200.0  # [px]
+    # robot_size = 100.0  # [px]
 
-    ox = []
+    # ox = []
+    # oy = []
+
+    # ox, oy = imageToArray()
+
+    # if show_animation:
+    #     plt.plot(ox, oy, ".k")
+    #     plt.plot(sx, sy, "^r")
+    #     plt.plot(gx, gy, "^c")
+    #     plt.grid(True)
+    #     plt.axis("equal")
+
+    # rx, ry = prm_planning(sx, sy, gx, gy, ox, oy, robot_size)
+
+    # assert rx, 'Cannot found path'
+    ox = [] 
     oy = []
 
     ox, oy = imageToArray()
 
-    if show_animation:
-        plt.plot(ox, oy, ".k")
-        plt.plot(sx, sy, "^r")
-        plt.plot(gx, gy, "^c")
-        plt.grid(True)
-        plt.axis("equal")
+    # if show_animation:
+    #     plt.plot(rx, ry, "-r")
+    #     plt.pause(0.00005)
+    #     plt.show()
+    # print("path x, y",rx.reverse(), ry.reverse())
 
-    rx, ry = prm_planning(sx, sy, gx, gy, ox, oy, robot_size)
+    while not rospy.is_shutdown():
+        # wait for robot 0 to get new position
+        if any([robot_0.goalDriving]):
 
-    assert rx, 'Cannot found path'
-    
+            if robot_0.new_goal:
+                position = robot_0.current_odom.pose.pose.position
+                sx, sy = scaleToMap(position.x, position.y)
+                gx, gy = scaleToMap(robot_0.new_point.x, robot_0.new_point.y)
+                robot_size = 100.0  # [px]
 
-    if show_animation:
-        plt.plot(rx, ry, "-r")
-        plt.pause(0.00005)
-        plt.show()
-    print("path x, y",rx.reverse(), ry.reverse())
 
-    goalDriving = True
-    while(goalDriving):
-        goalDriving = sendTargetService(rx, ry)
-    print("DESTINATION REACHED")
+
+                if show_animation:
+                    plt.plot(ox, oy, ".k")
+                    plt.plot(sx, sy, "^r")
+                    plt.plot(gx, gy, "^c")
+                    plt.grid(True)
+                    plt.axis("equal")
+
+                robot_0.rx, robot_0.ry = prm_planning(sx, sy, gx, gy,
+                                                      ox, oy, robot_size)
+
+                if not robot_0.rx:
+                    print('COULD NOT FIND PATH')
+                    robot_0.new_goal = False
+                    robot_0.goalDriving = False
+                    continue
+                # assert rx, 'Cannot found path'
+
+                if show_animation:
+                    plt.plot(robot_0.rx, robot_0.ry, "-r")
+                    plt.pause(0.00005)
+                    plt.show()
+
+                print("path x, y", robot_0.rx.reverse(), robot_0.ry.reverse())
+                robot_0.new_goal = False
+
+            # goalDriving = True
+            if(robot_0.goalDriving):
+                robot_0.goalDriving = sendTargetService(robot_0.rx, 
+                                                        robot_0.ry, robot_0)
+                if not robot_0.goalDriving:
+                    print("DESTINATION REACHED")
+
 
 if __name__ == '__main__':
     main()

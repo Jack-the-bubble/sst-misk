@@ -23,6 +23,7 @@ class RobotObject:
         self.current_odom = odom
 
     def new_goal_callback(self, req):
+        self.target_num = 0
         self.new_goal = True
         self.goalDriving = True
         self.new_point = Point(req.pose.position.x, req.pose.position.y, 0)

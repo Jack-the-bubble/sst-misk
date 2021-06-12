@@ -1,12 +1,15 @@
+#!/usr/bin/env/python
 import random
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import cKDTree
 import cv2
-
+import os
 from rospy import msg
 
+
+from robot_object import RobotObject
 # parameter
 N_SAMPLE = 1200  # number of sample_points
 N_KNN = 20  # number of edge from one sampled point
@@ -20,6 +23,8 @@ from sst_interfaces.srv import *
 
 show_animation = True
 target_num = 0
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Node:
@@ -263,7 +268,8 @@ def sample_points(sx, sy, gx, gy, rr, ox, oy, obstacle_kd_tree):
 
     return sample_x, sample_y
 
-def imageToArray(img_path = '../maps/map.png'):
+def imageToArray(img_path = os.path.join(BASE_DIR, 'src/map.png')):
+    print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     image = cv2.imread(img_path)
     ox = []
     oy = []
@@ -281,13 +287,28 @@ def scaleGoal(px,py):
     y = ((py-600)/100)
     return x,y
 
+def scaleToMap(x, y):
+    '''scale coordinates from ros to coordinates in map
+
+    :return (x, y) - a pair of coordinates in map frame from this script
+    '''
+    ret_x = 100*x+800
+    ret_y = 100*y+600
+
+    return ret_x, ret_y
+
 def main():
+    rospy.init_node('pr_vis_node')
     print(__file__ + " start!!")
 
+    robot_1 = RobotObject('robot_0')
+
     # start and goal position
-    sx = 1100.0  # [px]
-    sy = 800.0  # [px]
-    gx = 1400.0  # [px]
+    # sx = 1100.0  # [px]
+    # sy = 800.0  # [px]
+    position = robot_1.current_odom.pose.pose.position
+    sx, sy = scaleToMap(position.x, position.y)
+    gx = 1200.0  # [px]
     gy = 200.0  # [px]
     robot_size = 100.0  # [px]
 
